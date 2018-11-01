@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from network import Conv2d, FC
+import torchvision
 
 
 class stack_pool(nn.Module):
@@ -39,7 +40,7 @@ def vgg(cfg, i, batch_norm=False):
             if batch_norm:
                 layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             else:
-                layers += [conv2d, nn.PReLU()]
+                layers += [conv2d, nn.ReLU()]
             in_channels = v
     # pool5 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
     # conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6)
@@ -54,7 +55,19 @@ class CMTL_VGG(nn.Module):
         super(CMTL_VGG, self).__init__()
         self.num_classes = num_classes
 
-        self.base = nn.ModuleList(vgg(vgg_cfg, 1))
+        self.base = nn.Sequential(*vgg(vgg_cfg, 3))
+
+        base_model_dict = self.base.state_dict()
+        pretrained_model = getattr(torchvision.models, 'vgg16')(True)
+        pretrained_dict = pretrained_model.state_dict()
+        copy_dict = {}
+        for k, v in pretrained_dict.items():
+            if 'features' in k:
+                copy_dict[k[9:]] = v
+        copy_dict = {k: v for k, v in copy_dict.items() if k in base_model_dict}
+        base_model_dict.update(copy_dict)
+
+        self.base.load_state_dict(base_model_dict)
 
         self.hl_prior_2 = nn.Sequential(nn.AdaptiveMaxPool2d((32, 32)),
                                         Conv2d(512, 4, 1, same_padding=True, NL='prelu', bn=bn))
@@ -148,7 +161,7 @@ class CMTL(nn.Module):
         return x_den, x_cls
 
 if __name__ == "__main__":
-    img = np.ones((1, 1, 300, 300), dtype=np.float32)
+    img = np.ones((1, 3, 300, 300), dtype=np.float32)
     tensor = torch.from_numpy(img)
     inputs = Variable(tensor)
     net = CMTL_VGG()

@@ -90,4 +90,8 @@ def weights_normal_init(model, dev=0.01):
             elif isinstance(m, nn.Linear):
                 m.weight.data.normal_(0.0, dev)
 
+            elif isinstance(m, nn.ConvTranspose2d):
+                m.weight.data.normal_(0.0, dev)
+                if m.bias is not None:
+                    m.bias.data.fill_(0.0)
 

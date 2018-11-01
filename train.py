@@ -69,7 +69,12 @@ data_loader_val = ImageDataLoader(val_path, val_gt_path, shuffle=False, gt_downs
 
 #load net and initialize it
 net = CrowdCounter(ce_weights=class_wts)
-network.weights_normal_init(net, dev=0.01)
+# network.weights_normal_init(net, dev=0.01)
+network.weights_normal_init(net.CCN.hl_prior_2, dev=0.01)
+network.weights_normal_init(net.CCN.hl_prior_fc1, dev=0.01)
+network.weights_normal_init(net.CCN.hl_prior_fc2, dev=0.01)
+network.weights_normal_init(net.CCN.hl_prior_fc3, dev=0.01)
+network.weights_normal_init(net.CCN.de_stage, dev=0.01)
 net.cuda()
 net.train()
 
