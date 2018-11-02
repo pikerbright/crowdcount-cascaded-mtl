@@ -5,7 +5,7 @@ import os
 def save_results(input_img, gt_data,density_map,output_dir, fname='results.png'):
     input_img = input_img[0][0]
     gt_data = 255*gt_data/(np.max(gt_data) + 0.001)
-    density_map = 255*density_map/np.max(density_map)
+    density_map = 255*density_map/np.max(density_map + 0.001)
     gt_data = gt_data[0][0]
     density_map= density_map[0][0]
     if density_map.shape[1] != input_img.shape[1]:

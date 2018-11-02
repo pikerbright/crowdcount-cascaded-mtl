@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from torch import autograd
 from network import Conv2d, FC
 import torchvision
 
@@ -70,13 +71,13 @@ class CMTL_VGG(nn.Module):
         self.base.load_state_dict(base_model_dict)
 
         self.hl_prior_2 = nn.Sequential(nn.AdaptiveMaxPool2d((32, 32)),
-                                        Conv2d(512, 4, 1, same_padding=True, NL='prelu', bn=bn))
+                                        Conv2d(768, 4, 1, same_padding=True, NL='prelu', bn=bn))
 
         self.hl_prior_fc1 = FC(4 * 1024, 512, NL='prelu')
         self.hl_prior_fc2 = FC(512, 256, NL='prelu')
         self.hl_prior_fc3 = FC(256, self.num_classes, NL='prelu')
 
-        self.de_stage = nn.Sequential(Conv2d(512, 256, 3, same_padding=True, NL='prelu', bn=bn),
+        self.de_stage = nn.Sequential(Conv2d(768, 256, 3, same_padding=True, NL='prelu', bn=bn),
                                         Conv2d(256, 128, 3, same_padding=True, NL='prelu', bn=bn),
                                         nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, output_padding=0, bias=True),
                                         nn.PReLU(),
@@ -88,10 +89,17 @@ class CMTL_VGG(nn.Module):
 
     def forward(self, im_data):
         x = im_data
-        for k in range(len(self.base)):
+        for k in range(16): #conv3_3
             x = self.base[k](x)
 
-        x_hlp2 = self.hl_prior_2(x)
+        conv3_3 = x
+
+        for k in range(16, len(self.base)):
+            x = self.base[k](x)
+
+        base_out = torch.cat([conv3_3, x], dim=1)
+
+        x_hlp2 = self.hl_prior_2(base_out)
         x_hlp2 = x_hlp2.view(x_hlp2.size()[0], -1)
         x_hlp = self.hl_prior_fc1(x_hlp2)
         x_hlp = F.dropout(x_hlp, training=self.training)
@@ -99,7 +107,7 @@ class CMTL_VGG(nn.Module):
         x_hlp = F.dropout(x_hlp, training=self.training)
         x_cls = self.hl_prior_fc3(x_hlp)
 
-        x_den = self.de_stage(x)
+        x_den = self.de_stage(base_out)
 
         return x_den, x_cls
 

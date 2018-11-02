@@ -67,14 +67,22 @@ data_loader = ImageDataLoader(train_path, train_gt_path, shuffle=True, gt_downsa
 class_wts = data_loader.get_classifier_weights()
 data_loader_val = ImageDataLoader(val_path, val_gt_path, shuffle=False, gt_downsample=False, pre_load=True)
 
+resume = True
 #load net and initialize it
 net = CrowdCounter(ce_weights=class_wts)
-# network.weights_normal_init(net, dev=0.01)
-network.weights_normal_init(net.CCN.hl_prior_2, dev=0.01)
-network.weights_normal_init(net.CCN.hl_prior_fc1, dev=0.01)
-network.weights_normal_init(net.CCN.hl_prior_fc2, dev=0.01)
-network.weights_normal_init(net.CCN.hl_prior_fc3, dev=0.01)
-network.weights_normal_init(net.CCN.de_stage, dev=0.01)
+
+if resume:
+    resume_model = "./model_bak/cmtl_shtechA_204.h5"
+    network.load_net(resume_model, net)
+    print("Resume ", resume_model)
+else:
+    # network.weights_normal_init(net, dev=0.01)
+    network.weights_normal_init(net.CCN.hl_prior_2, dev=0.01)
+    network.weights_normal_init(net.CCN.hl_prior_fc1, dev=0.01)
+    network.weights_normal_init(net.CCN.hl_prior_fc2, dev=0.01)
+    network.weights_normal_init(net.CCN.hl_prior_fc3, dev=0.01)
+    network.weights_normal_init(net.CCN.de_stage, dev=0.01)
+
 net.cuda()
 net.train()
 
