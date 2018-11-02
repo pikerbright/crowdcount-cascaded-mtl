@@ -67,7 +67,7 @@ data_loader = ImageDataLoader(train_path, train_gt_path, shuffle=True, gt_downsa
 class_wts = data_loader.get_classifier_weights()
 data_loader_val = ImageDataLoader(val_path, val_gt_path, shuffle=False, gt_downsample=False, pre_load=True)
 
-resume = True
+resume = False
 #load net and initialize it
 net = CrowdCounter(ce_weights=class_wts)
 
