@@ -13,7 +13,6 @@ class RCLoss(nn.Module):
     def forward(self, input, target):
         loss_mse_fn = nn.MSELoss()
         loss = loss_mse_fn(input, target)
-        loss = torch.div(loss, torch.pow(target, 2) + 1)
 
         return loss
 
@@ -30,7 +29,7 @@ class CrowdCounter(nn.Module):
         
     @property
     def loss(self):
-        return self.loss_mse + 0.0001*self.cross_entropy + 0.00001*self.rc_loss
+        return self.loss_mse + 0.0001*self.cross_entropy + self.rc_loss
     
     def forward(self,  im_data, gt_data=None, gt_cls_label=None, ce_weights=None):        
         im_data = network.np_to_variable(im_data, is_cuda=True, is_training=self.training)                        
@@ -51,8 +50,9 @@ class CrowdCounter(nn.Module):
         ce_weights = ce_weights.cuda()
         cross_entropy = self.loss_bce_fn(density_cls_score, gt_cls_label)
 
-        Fy = torch.sum(density_map.view(density_map.size(0), -1), dim = 1)
-        Y = torch.sum(gt_data.view(gt_data.size(0), -1), dim = 1)
-        rc_loss = self.rc_loss_fn(Fy, Y)
+        density_map_size = density_map.size(1)*density_map.size(2)*density_map.size(3)
+        Fy = torch.div(torch.sum(density_map.view(density_map.size(0), -1), dim = 1), density_map_size)
+        Y = torch.div(torch.sum(gt_data.view(gt_data.size(0), -1), dim = 1), density_map_size)
+        rc_loss = self.loss_mse_fn(Fy, Y)
         return loss_mse, cross_entropy, rc_loss
 
