@@ -42,10 +42,11 @@ val_gt_path = './data/formatted_trainval/shanghaitech_part_A_patches_9/val_den'
 #training configuration
 start_step = 0
 end_step = 2000
-lr = 0.00001
+lr = 1e-6
 momentum = 0.9
 disp_interval = 500
 log_interval = 250
+weight_decay = 5e-4
 
 
 #Tensorboard  config
@@ -77,17 +78,26 @@ if resume:
     print("Resume ", resume_model)
 else:
     # network.weights_normal_init(net, dev=0.01)
-    network.weights_normal_init(net.CCN.hl_prior_2, dev=0.01)
-    network.weights_normal_init(net.CCN.hl_prior_fc1, dev=0.01)
-    network.weights_normal_init(net.CCN.hl_prior_fc2, dev=0.01)
-    network.weights_normal_init(net.CCN.hl_prior_fc3, dev=0.01)
-    network.weights_normal_init(net.CCN.de_stage, dev=0.01)
+    net.init_weight();
 
 net.cuda()
 net.train()
 
-params = list(net.parameters())
-optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=lr)
+policies = net.get_optim_policies()
+for group in policies:
+    print(('group: {} has {} params, lr_mult: {}, decay_mult: {}'.format(
+        group['name'], len(group['params']), group['lr_mult'], group['decay_mult'])))
+
+optimizer = torch.optim.SGD(policies, lr, momentum=momentum, weight_decay=weight_decay)
+# optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=lr)
+
+def adjust_learning_rate(optimizer, epoch, lr_steps):
+    decay = 0.1 ** (sum(epoch >= np.array(lr_steps)))
+    t_lr = lr * decay
+    decay = weight_decay
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = t_lr * param_group['lr_mult']
+        param_group['weight_decay'] = decay * param_group['decay_mult']
 
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
@@ -114,10 +124,13 @@ t.tic()
 
 best_mae = sys.maxint
 
+iteration = 0
 for epoch in range(start_step, end_step+1):    
     step = -1
     train_loss = 0
-    for blob in data_loader:                
+    for blob in data_loader:
+        adjust_learning_rate(optimizer, epoch, (200, 400, 600))
+
         step = step + 1        
         im_data = blob['data']
         gt_data = blob['gt_density']
@@ -156,6 +169,8 @@ for epoch in range(start_step, end_step+1):
         if re_cnt:                                
             t.tic()
             re_cnt = False
+
+        iteration += 1
 
     if (epoch % 2 == 0):
         save_name = os.path.join(output_dir, '{}_{}_{}.h5'.format(method,dataset_name,epoch))
