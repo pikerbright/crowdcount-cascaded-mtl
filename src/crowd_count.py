@@ -84,7 +84,7 @@ class CrowdCounter(nn.Module):
         if self.training:                        
             gt_data = network.np_to_variable(gt_data, is_cuda=True, is_training=self.training)            
             gt_cls_label = network.np_to_variable(gt_cls_label, is_cuda=True, is_training=self.training,dtype=torch.FloatTensor)                        
-            self.loss_mse, self.cross_entropy, self.rc_loss = self.build_loss(density_map, density_cls_prob, gt_data, gt_cls_label, ce_weights)
+            self.loss_mse, self.cross_entropy = self.build_loss(density_map, density_cls_prob, gt_data, gt_cls_label, ce_weights)
             
             
         return density_map
