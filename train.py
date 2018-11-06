@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import sys
 from datetime import datetime
+import argparse
 
 from src.crowd_count import CrowdCounter
 from src import network
@@ -27,26 +28,35 @@ def log_print(text, color=None, on_color=None, attrs=None):
         cprint(text, color=color, on_color=on_color, attrs=attrs)
     else:
         print(text)
-        
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--lr', '--learning-rate', default=1e-5, type=float,
+                    metavar='LR', help='initial learning rate')
+parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
+                    help='momentum')
+parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
+                    metavar='W', help='weight decay (default: 5e-4)')
+
+args = parser.parse_args()
 
 method = 'cmtl' #method name - used for saving model file
-dataset_name = 'shtechA' #dataset name - used for saving model file
+dataset_name = 'shtechB' #dataset name - used for saving model file
 output_dir = './saved_models/' #model files are saved here
 
 #train and validation paths
-train_path = './data/formatted_trainval/shanghaitech_part_A_patches_9/train'
-train_gt_path = './data/formatted_trainval/shanghaitech_part_A_patches_9/train_den'
-val_path = './data/formatted_trainval/shanghaitech_part_A_patches_9/val'
-val_gt_path = './data/formatted_trainval/shanghaitech_part_A_patches_9/val_den'
+train_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train'
+train_gt_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train_den'
+val_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/val'
+val_gt_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/val_den'
 
 #training configuration
 start_step = 0
 end_step = 2000
-lr = 1e-6
 momentum = 0.9
 disp_interval = 500
 log_interval = 250
-weight_decay = 5e-4
+weight_decay = 0
 
 
 #Tensorboard  config
@@ -88,15 +98,16 @@ for group in policies:
     print(('group: {} has {} params, lr_mult: {}, decay_mult: {}'.format(
         group['name'], len(group['params']), group['lr_mult'], group['decay_mult'])))
 
-optimizer = torch.optim.SGD(policies, lr, momentum=momentum, weight_decay=weight_decay)
-# optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=lr)
+optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), args.lr, momentum=momentum, weight_decay=weight_decay)
+# optimizer = torch.optim.SGD(policies, args.lr, momentum=momentum, weight_decay=weight_decay)
+# optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=args.lr)
 
 def adjust_learning_rate(optimizer, epoch, lr_steps):
     decay = 0.1 ** (sum(epoch >= np.array(lr_steps)))
-    t_lr = lr * decay
+    lr = args.lr * decay
     decay = weight_decay
     for param_group in optimizer.param_groups:
-        param_group['lr'] = t_lr * param_group['lr_mult']
+        param_group['lr'] = lr * param_group['lr_mult']
         param_group['weight_decay'] = decay * param_group['decay_mult']
 
 if not os.path.exists(output_dir):
@@ -129,7 +140,7 @@ for epoch in range(start_step, end_step+1):
     step = -1
     train_loss = 0
     for blob in data_loader:
-        adjust_learning_rate(optimizer, epoch, (200, 400, 600))
+        # adjust_learning_rate(optimizer, epoch, (200, 400, 600))
 
         step = step + 1        
         im_data = blob['data']
