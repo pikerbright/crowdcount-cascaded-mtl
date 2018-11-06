@@ -53,11 +53,8 @@ val_gt_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/val_den'
 #training configuration
 start_step = 0
 end_step = 2000
-momentum = 0.9
 disp_interval = 500
 log_interval = 250
-weight_decay = 0
-
 
 #Tensorboard  config
 use_tensorboard = False
@@ -98,14 +95,15 @@ for group in policies:
     print(('group: {} has {} params, lr_mult: {}, decay_mult: {}'.format(
         group['name'], len(group['params']), group['lr_mult'], group['decay_mult'])))
 
-optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), args.lr, momentum=momentum, weight_decay=weight_decay)
-# optimizer = torch.optim.SGD(policies, args.lr, momentum=momentum, weight_decay=weight_decay)
+optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), args.lr,
+                            momentum=args.momentum, weight_decay=args.weight_decay)
+# optimizer = torch.optim.SGD(policies, args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 # optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=args.lr)
 
 def adjust_learning_rate(optimizer, epoch, lr_steps):
     decay = 0.1 ** (sum(epoch >= np.array(lr_steps)))
     lr = args.lr * decay
-    decay = weight_decay
+    decay = args.weight_decay
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr * param_group['lr_mult']
         param_group['weight_decay'] = decay * param_group['decay_mult']
