@@ -29,7 +29,7 @@ class CrowdCounter(nn.Module):
         self.rc_loss_fn = RCLoss()
 
     def init_weight(self):
-#        network.weights_normal_init(self.CCN.base, dev=0.01)
+        network.weights_normal_init(self.CCN.base, dev=0.01)
         network.weights_normal_init(self.CCN.hl_prior_2, dev=0.01)
         network.weights_normal_init(self.CCN.hl_prior_fc1, dev=0.01)
         network.weights_normal_init(self.CCN.hl_prior_fc2, dev=0.01)

@@ -147,11 +147,11 @@ class ImageDataLoader():
         ht_1 = (ht/4)*4
         wd_1 = (wd/4)*4
         img = cv2.resize(img,(wd_1,ht_1))
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-        img = img / 255.
-        img = (img - [0.485, 0.456, 0.406]) / [0.229, 0.224, 0.225]
-        img = np.transpose(img, [2, 0, 1])
-        img = img.reshape((1,3,img.shape[1],img.shape[2]))
+        # img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        # img = img / 255.
+        # img = (img - [0.485, 0.456, 0.406]) / [0.229, 0.224, 0.225]
+        # img = np.transpose(img, [2, 0, 1])
+        img = img.reshape((1,1,img.shape[0],img.shape[1]))
 
         den = pd.read_csv(os.path.join(self.gt_path,os.path.splitext(fname)[0] + '.csv'), sep=',',header=None).as_matrix()                        
         den  = den.astype(np.float32, copy=False)

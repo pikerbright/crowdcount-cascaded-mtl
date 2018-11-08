@@ -31,7 +31,7 @@ def log_print(text, color=None, on_color=None, attrs=None):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--lr', '--learning-rate', default=1e-5, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-2, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0, type=float, metavar='M',
                     help='momentum')
@@ -64,7 +64,7 @@ exp_name = None # the previous experiment name in TensorBoard
 
 
 
-rand_seed = 64678    
+rand_seed = None#64678
 if rand_seed is not None:
     np.random.seed(rand_seed)
     torch.manual_seed(rand_seed)
