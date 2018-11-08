@@ -57,7 +57,7 @@ class CMTL_VGG(nn.Module):
         self.num_classes = num_classes
 
         self.base = nn.Sequential(*vgg(vgg_cfg, 3))
-
+        
         base_model_dict = self.base.state_dict()
         pretrained_model = getattr(torchvision.models, 'vgg16')(True)
         pretrained_dict = pretrained_model.state_dict()
@@ -69,22 +69,24 @@ class CMTL_VGG(nn.Module):
         base_model_dict.update(copy_dict)
 
         self.base.load_state_dict(base_model_dict)
-
+        
         self.hl_prior_2 = nn.Sequential(nn.AdaptiveMaxPool2d((32, 32)),
-                                        Conv2d(768, 4, 1, same_padding=True, NL='prelu', bn=bn))
+                                        Conv2d(256, 4, 1, same_padding=True, NL='prelu', bn=bn))
 
         self.hl_prior_fc1 = FC(4 * 1024, 512, NL='prelu')
         self.hl_prior_fc2 = FC(512, 256, NL='prelu')
         self.hl_prior_fc3 = FC(256, self.num_classes, NL='prelu')
 
-        self.de_stage = nn.Sequential(Conv2d(768, 256, 3, same_padding=True, NL='prelu', bn=bn),
-                                        Conv2d(256, 128, 3, same_padding=True, NL='prelu', bn=bn),
-                                        nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, output_padding=0, bias=True),
-                                        nn.PReLU(),
-                                        nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1, output_padding=0, bias=True),
-                                        nn.PReLU(),
+        self.de_stage = nn.Sequential(Conv2d(256, 128, 3, same_padding=True, NL='prelu', bn=bn),
+                                        Conv2d(128, 32, 3, same_padding=True, NL='prelu', bn=bn),
+                                        #nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, output_padding=0, bias=True),
+                                        #nn.PReLU(),
+                                        #nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1, output_padding=0, bias=True),
+                                        #nn.PReLU(),
                                         # nn.ConvTranspose2d(32, 16, 3, stride=2, padding=1, output_padding=0, bias=True),
                                         # nn.PReLU(),
+                                        nn.Upsample(scale_factor=4, mode='bilinear'),
+                                        nn.ReLU(inplace=True),
                                         Conv2d(32, 1, 1, same_padding=True, NL='relu', bn=bn))
 
     def forward(self, im_data):
@@ -94,11 +96,12 @@ class CMTL_VGG(nn.Module):
 
         conv3_3 = x
 
-        for k in range(16, len(self.base)):
-            x = self.base[k](x)
+        #for k in range(16, len(self.base)):
+        #    x = self.base[k](x)
 
-        base_out = torch.cat([conv3_3, x], dim=1)
-
+        #base_out = torch.cat([conv3_3, x], dim=1)
+        base_out = x
+        
         x_hlp2 = self.hl_prior_2(base_out)
         x_hlp2 = x_hlp2.view(x_hlp2.size()[0], -1)
         x_hlp = self.hl_prior_fc1(x_hlp2)
@@ -106,7 +109,7 @@ class CMTL_VGG(nn.Module):
         x_hlp = self.hl_prior_fc2(x_hlp)
         x_hlp = F.dropout(x_hlp, training=self.training)
         x_cls = self.hl_prior_fc3(x_hlp)
-
+        
         x_den = self.de_stage(base_out)
 
         return x_den, x_cls
@@ -159,9 +162,9 @@ class CMTL(nn.Module):
         x_hlp2 = self.hl_prior_2(x_hlp1)
         x_hlp2 = x_hlp2.view(x_hlp2.size()[0], -1) 
         x_hlp = self.hl_prior_fc1(x_hlp2)
-        x_hlp = F.dropout(x_hlp, training=self.training)
+#        x_hlp = F.dropout(x_hlp, training=self.training)
         x_hlp = self.hl_prior_fc2(x_hlp)
-        x_hlp = F.dropout(x_hlp, training=self.training)
+#        x_hlp = F.dropout(x_hlp, training=self.training)
         x_cls = self.hl_prior_fc3(x_hlp)        
         x_den = self.de_stage_1(x_base)        
         x_den = torch.cat((x_hlp1,x_den),1)

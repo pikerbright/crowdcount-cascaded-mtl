@@ -33,26 +33,26 @@ def log_print(text, color=None, on_color=None, attrs=None):
 parser = argparse.ArgumentParser()
 parser.add_argument('--lr', '--learning-rate', default=1e-5, type=float,
                     metavar='LR', help='initial learning rate')
-parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
+parser.add_argument('--momentum', default=0, type=float, metavar='M',
                     help='momentum')
-parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
+parser.add_argument('--weight-decay', '--wd', default=0, type=float,
                     metavar='W', help='weight decay (default: 5e-4)')
 
 args = parser.parse_args()
-
+print "LR: ", args.lr
 method = 'cmtl' #method name - used for saving model file
 dataset_name = 'shtechB' #dataset name - used for saving model file
 output_dir = './saved_models/' #model files are saved here
 
 #train and validation paths
-train_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train'
+train_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train1'
 train_gt_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train_den'
-val_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/val'
-val_gt_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/val_den'
+val_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train1'
+val_gt_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train_den'
 
 #training configuration
 start_step = 0
-end_step = 2000
+end_step = 40000
 disp_interval = 500
 log_interval = 250
 
@@ -95,18 +95,26 @@ for group in policies:
     print(('group: {} has {} params, lr_mult: {}, decay_mult: {}'.format(
         group['name'], len(group['params']), group['lr_mult'], group['decay_mult'])))
 
-optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), args.lr,
-                            momentum=args.momentum, weight_decay=args.weight_decay)
+optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 # optimizer = torch.optim.SGD(policies, args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 # optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=args.lr)
 
-def adjust_learning_rate(optimizer, epoch, lr_steps):
+def adjust_learning_rate1(optimizer, epoch, lr_steps):
     decay = 0.1 ** (sum(epoch >= np.array(lr_steps)))
     lr = args.lr * decay
     decay = args.weight_decay
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr * param_group['lr_mult']
         param_group['weight_decay'] = decay * param_group['decay_mult']
+
+def adjust_learning_rate(optimizer, epoch):
+    decay = 10 ** epoch
+    t_lr = lr * decay
+    decay = weight_decay
+    print("adjust_learning_rate", t_lr)
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = t_lr
+        param_group['weight_decay'] = 0
 
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
@@ -137,6 +145,7 @@ iteration = 0
 for epoch in range(start_step, end_step+1):    
     step = -1
     train_loss = 0
+#    adjust_learning_rate(optimizer, epoch)
     for blob in data_loader:
         # adjust_learning_rate(optimizer, epoch, (200, 400, 600))
 
@@ -144,7 +153,7 @@ for epoch in range(start_step, end_step+1):
         im_data = blob['data']
         gt_data = blob['gt_density']
         gt_class_label = blob['gt_class_label']       
-        
+        '''        
         #data augmentation on the fly
         if np.random.uniform() > 0.5:
             #randomly flip input image and density 
@@ -153,16 +162,16 @@ for epoch in range(start_step, end_step+1):
         if np.random.uniform() > 0.5:
             #add random noise to the input image
             im_data = im_data + np.random.uniform(-10,10,size=im_data.shape) 
-            
+        '''         
         density_map = net(im_data, gt_data, gt_class_label, class_wts)
         loss = net.loss
-        train_loss += loss.data[0]
+        train_loss += loss.item()
         step_cnt += 1
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         
-        if step % disp_interval == 0:            
+        if True:#step % disp_interval == 0:            
             duration = t.toc(average=False)
             fps = step_cnt / duration
             gt_count = np.sum(gt_data)    
@@ -181,7 +190,8 @@ for epoch in range(start_step, end_step+1):
 
         iteration += 1
 
-    if (epoch % 2 == 0):
+    print(train_loss)
+    if (epoch % 1400 == 0):
         save_name = os.path.join(output_dir, '{}_{}_{}.h5'.format(method,dataset_name,epoch))
         network.save_net(save_name, net) 
         #calculate error on the validation dataset 

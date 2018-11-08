@@ -13,9 +13,9 @@ vis = False
 save_output = True
 
 #test data and model file path
-data_path =  './data/original/shanghaitech/part_A_final/test_data/images/'
-gt_path = './data/original/shanghaitech/part_A_final/test_data/ground_truth_csv/'
-model_path = './final_models/cmtl_shtechA_204.h5'
+data_path =  './data/original/shanghaitech/part_B_final/test_data/images/'
+gt_path = './data/original/shanghaitech/part_B_final/test_data/ground_truth_csv/'
+model_path = './saved_models/cmtl_shtechB_10.h5'
 
 
 output_dir = './output/'

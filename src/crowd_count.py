@@ -29,6 +29,7 @@ class CrowdCounter(nn.Module):
         self.rc_loss_fn = RCLoss()
 
     def init_weight(self):
+#        network.weights_normal_init(self.CCN.base, dev=0.01)
         network.weights_normal_init(self.CCN.hl_prior_2, dev=0.01)
         network.weights_normal_init(self.CCN.hl_prior_fc1, dev=0.01)
         network.weights_normal_init(self.CCN.hl_prior_fc2, dev=0.01)
@@ -68,13 +69,13 @@ class CrowdCounter(nn.Module):
         return [
             {'params': base_weight, 'lr_mult': 1, 'decay_mult': 1, 'name': "base_weight"},
             {'params': base_bias, 'lr_mult': 2, 'decay_mult': 0, 'name': "base_bias"},
-            {'params': head_weight, 'lr_mult': 5, 'decay_mult': 1, 'name': "head_weight"},
-            {'params': head_bias, 'lr_mult': 5, 'decay_mult': 0, 'name': "head_bias"}
+            {'params': head_weight, 'lr_mult': 1, 'decay_mult': 1, 'name': "head_weight"},
+            {'params': head_bias, 'lr_mult': 2, 'decay_mult': 0, 'name': "head_bias"}
         ]
 
     @property
     def loss(self):
-        return self.loss_mse + 0.0001*self.cross_entropy
+        return self.loss_mse# + 0.0001*self.cross_entropy
     
     def forward(self,  im_data, gt_data=None, gt_cls_label=None, ce_weights=None):        
         im_data = network.np_to_variable(im_data, is_cuda=True, is_training=self.training)                        

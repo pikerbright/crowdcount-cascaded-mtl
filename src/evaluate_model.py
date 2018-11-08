@@ -16,6 +16,7 @@ def evaluate_model(trained_model, data_loader):
         density_map = density_map.data.cpu().numpy()
         gt_count = np.sum(gt_data)
         et_count = np.sum(density_map)
+        print "gt_count", gt_count,"et_count", et_count
         mae += abs(gt_count-et_count)
         mse += ((gt_count-et_count)*(gt_count-et_count))        
     mae = mae/data_loader.get_num_samples()
