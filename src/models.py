@@ -56,7 +56,7 @@ class CMTL_VGG(nn.Module):
         super(CMTL_VGG, self).__init__()
         self.num_classes = num_classes
 
-        self.base = nn.Sequential(*vgg(vgg_cfg, 1))
+        self.base = nn.Sequential(*vgg(vgg_cfg, 3))
         
         # base_model_dict = self.base.state_dict()
         # pretrained_model = getattr(torchvision.models, 'vgg16')(True)

@@ -2,12 +2,14 @@ import os
 import torch
 import numpy as np
 
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from src.crowd_count import CrowdCounter
 from src import network
 import cv2
 
-model_path = './final_models/cmtl_shtechB_1000.h5'
+model_path = './final_models/cmtl_shtechB_39200.h5'
 
 def read_gray_img(img_path):
     bgr = cv2.imread(img_path)
@@ -17,8 +19,13 @@ def read_gray_img(img_path):
     plt.imshow(gray_3)
     plt.show()
 
-    gray = gray.reshape((1, 1, gray.shape[0], gray.shape[1]))
-    return gray
+    img = gray_3 / 255.
+    img = (img - [0.5, 0.5, 0.5]) / [0.229, 0.229, 0.229]
+    img = np.transpose(img, [2, 0, 1])
+    img = img.reshape((1, 3, img.shape[1], img.shape[2]))
+
+    # gray = gray.reshape((1, 1, gray.shape[0], gray.shape[1]))
+    return img
 
 def demo(img_path):
     net = CrowdCounter()
@@ -37,6 +44,7 @@ def demo(img_path):
     heat_map = heat_map.data.numpy()
     print(np.sum(heat_map))
     plt.imshow(heat_map, cmap='hot')
+    plt.savefig('test.jpg')
     plt.show()
 
 

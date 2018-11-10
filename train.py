@@ -31,7 +31,7 @@ def log_print(text, color=None, on_color=None, attrs=None):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--lr', '--learning-rate', default=1e-2, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-5, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0, type=float, metavar='M',
                     help='momentum')
@@ -64,7 +64,7 @@ exp_name = None # the previous experiment name in TensorBoard
 
 
 
-rand_seed = None#64678
+rand_seed = 64678
 if rand_seed is not None:
     np.random.seed(rand_seed)
     torch.manual_seed(rand_seed)
@@ -95,9 +95,9 @@ for group in policies:
     print(('group: {} has {} params, lr_mult: {}, decay_mult: {}'.format(
         group['name'], len(group['params']), group['lr_mult'], group['decay_mult'])))
 
-optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+# optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 # optimizer = torch.optim.SGD(policies, args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
-# optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=args.lr)
+optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=args.lr)
 
 def adjust_learning_rate1(optimizer, epoch, lr_steps):
     decay = 0.1 ** (sum(epoch >= np.array(lr_steps)))
