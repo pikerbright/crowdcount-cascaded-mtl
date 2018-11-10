@@ -71,9 +71,9 @@ if rand_seed is not None:
     torch.cuda.manual_seed(rand_seed)
     
 #loadt training and validation data
-data_loader = ImageDataLoader(train_path, train_gt_path, shuffle=True, gt_downsample=False, pre_load=True)
+data_loader = ImageDataLoader(train_path, train_gt_path, shuffle=True, gt_downsample=True, pre_load=True)
 class_wts = data_loader.get_classifier_weights()
-data_loader_val = ImageDataLoader(val_path, val_gt_path, shuffle=False, gt_downsample=False, pre_load=True)
+data_loader_val = ImageDataLoader(val_path, val_gt_path, shuffle=False, gt_downsample=True, pre_load=True)
 
 resume = False
 #load net and initialize it
@@ -163,7 +163,7 @@ for epoch in range(start_step, end_step+1):
             #add random noise to the input image
             im_data = im_data + np.random.uniform(-10,10,size=im_data.shape) 
         '''         
-        density_map = net(im_data, gt_data, gt_class_label, class_wts)
+        density_map = net(im_data, gt_data)
         loss = net.loss
         train_loss += loss.item()
         step_cnt += 1

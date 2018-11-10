@@ -156,8 +156,8 @@ class ImageDataLoader():
         den = pd.read_csv(os.path.join(self.gt_path,os.path.splitext(fname)[0] + '.csv'), sep=',',header=None).as_matrix()                        
         den  = den.astype(np.float32, copy=False)
         if self.gt_downsample:
-            wd_1 = wd_1/4
-            ht_1 = ht_1/4
+            wd_1 = wd_1/8
+            ht_1 = ht_1/8
             den = cv2.resize(den,(wd_1,ht_1))                
             den = den * ((wd*ht)/(wd_1*ht_1))
         else:
