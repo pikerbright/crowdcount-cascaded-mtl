@@ -26,7 +26,7 @@ class stack_pool(nn.Module):
         y = (x1 + x2 + x3) / 3.0
         return y
 
-vgg_cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512]
+vgg_cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'C', 512, 512, 512]
 
 def vgg(cfg, i, batch_norm=False):
     layers = []
@@ -77,15 +77,25 @@ class CMTL_VGG(nn.Module):
         self.hl_prior_fc2 = FC(512, 256, NL='prelu')
         self.hl_prior_fc3 = FC(256, self.num_classes, NL='prelu')
 
-        self.p_conv = Conv2d(512, 1, 1, same_padding=True, NL='relu', bn=bn)
+        self.p_conv = nn.Sequential(Conv2d(1024, 256, 1, same_padding=True, NL='prelu', bn=bn),
+                                    Conv2d(256, 32, 1, same_padding=True, NL='prelu', bn=bn),
+                                    Conv2d(32, 1, 1, same_padding=True, NL='relu', bn=bn))
 
 
     def forward(self, im_data):
         x = im_data
 
-        x = self.base(x)
+        for i in range(23):
+            x = self.base[i](x)
 
-        x_den = self.p_conv(x)
+        conv4_3 = x
+
+        for i in range(23, len(self.base)):
+            x = self.base[i](x)
+
+        feature = torch.cat((conv4_3, x), dim=1)
+
+        x_den = self.p_conv(feature)
 
         return x_den
 
