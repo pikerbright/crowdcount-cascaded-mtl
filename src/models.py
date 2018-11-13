@@ -26,7 +26,7 @@ class stack_pool(nn.Module):
         y = (x1 + x2 + x3) / 3.0
         return y
 
-vgg_cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'C', 512, 512, 512]
+vgg_cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512]
 
 def vgg(cfg, i, batch_norm=False):
     layers = []
@@ -43,11 +43,9 @@ def vgg(cfg, i, batch_norm=False):
             else:
                 layers += [conv2d, nn.ReLU()]
             in_channels = v
-    # pool5 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
-    # conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6)
-    # conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
-    # layers += [pool5, conv6,
-    #            nn.ReLU(inplace=True), conv7, nn.ReLU(inplace=True)]
+    pool5 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
+    conv6_1 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+    layers += [pool5, conv6_1, nn.ReLU(inplace=True)]
     return layers
 
 class CMTL_VGG(nn.Module):
@@ -70,16 +68,18 @@ class CMTL_VGG(nn.Module):
         #
         # self.base.load_state_dict(base_model_dict)
         
-        self.hl_prior_2 = nn.Sequential(nn.AdaptiveMaxPool2d((32, 32)),
-                                        Conv2d(256, 4, 1, same_padding=True, NL='prelu', bn=bn))
+        # self.hl_prior_2 = nn.Sequential(nn.AdaptiveMaxPool2d((32, 32)),
+        #                                 Conv2d(256, 4, 1, same_padding=True, NL='prelu', bn=bn))
+        #
+        # self.hl_prior_fc1 = FC(4 * 1024, 512, NL='prelu')
+        # self.hl_prior_fc2 = FC(512, 256, NL='prelu')
+        # self.hl_prior_fc3 = FC(256, self.num_classes, NL='prelu')
 
-        self.hl_prior_fc1 = FC(4 * 1024, 512, NL='prelu')
-        self.hl_prior_fc2 = FC(512, 256, NL='prelu')
-        self.hl_prior_fc3 = FC(256, self.num_classes, NL='prelu')
+        self.conv_concat1_2x = nn.ConvTranspose2d(1024, 512, 2, stride=2, groups=512, padding=0, output_padding=0, bias=False)
 
-        self.p_conv = nn.Sequential(Conv2d(1024, 256, 1, same_padding=True, NL='prelu', bn=bn),
-                                    Conv2d(256, 32, 1, same_padding=True, NL='prelu', bn=bn),
-                                    Conv2d(32, 1, 1, same_padding=True, NL='relu', bn=bn))
+        self.p_conv = nn.Sequential(Conv2d(1024, 512, 3, same_padding=True, NL='relu', bn=bn),
+                                    Conv2d(512, 256, 3, same_padding=True, NL='relu', bn=bn),
+                                    Conv2d(256, 1, 1, same_padding=True, NL=None, bn=bn))
 
 
     def forward(self, im_data):
@@ -90,12 +90,23 @@ class CMTL_VGG(nn.Module):
 
         conv4_3 = x
 
-        for i in range(23, len(self.base)):
+        for i in range(23, 30):
             x = self.base[i](x)
 
-        feature = torch.cat((conv4_3, x), dim=1)
+        conv5_3 = x
 
-        x_den = self.p_conv(feature)
+        for i in range(30, len(self.base)):
+            x = self.base[i](x)
+
+        conv6_1 = x
+
+        concat1 = torch.cat((conv5_3, conv6_1), dim=1)
+
+        conv_concat1_2x = self.conv_concat1_2x(concat1)
+
+        concat = torch.cat((conv4_3, conv_concat1_2x), dim=1)
+
+        x_den = self.p_conv(concat)
 
         return x_den
 

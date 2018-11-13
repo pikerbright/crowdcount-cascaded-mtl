@@ -33,6 +33,7 @@ class CrowdCounter(nn.Module):
         base_bias = []
         head_weight = []
         head_bias = []
+        deconv_weight = []
 
         for m in self.CCN.base.modules():
             if isinstance(m, torch.nn.Conv2d):
@@ -56,11 +57,16 @@ class CrowdCounter(nn.Module):
                 ps = list(m.parameters())
                 head_weight.append(ps[0])
 
+        for m in self.CCN.conv_concat1_2x.modules():
+            ps = list(m.parameters())
+            deconv_weight.append(ps[0])
+
         return [
             {'params': base_weight, 'lr_mult': 1, 'decay_mult': 1, 'name': "base_weight"},
             {'params': base_bias, 'lr_mult': 2, 'decay_mult': 0, 'name': "base_bias"},
-            {'params': head_weight, 'lr_mult': 1, 'decay_mult': 1, 'name': "head_weight"},
-            {'params': head_bias, 'lr_mult': 2, 'decay_mult': 0, 'name': "head_bias"}
+            {'params': head_weight, 'lr_mult': 1, 'decay_mult': 0, 'name': "head_weight"},
+            {'params': head_bias, 'lr_mult': 2, 'decay_mult': 0, 'name': "head_bias"},
+            {'params': deconv_weight, 'lr_mult': 0, 'decay_mult': 0, 'name': "deconv_weight"}
         ]
 
     @property

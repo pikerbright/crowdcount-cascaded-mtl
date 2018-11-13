@@ -91,7 +91,7 @@ def weights_normal_init(model, dev=0.01):
                 m.weight.data.normal_(0.0, dev)
 
             elif isinstance(m, nn.ConvTranspose2d):
-                m.weight.data.normal_(0.0, dev)
+                m.weight.data.fill_(1.0)
                 if m.bias is not None:
                     m.bias.data.fill_(0.0)
 
