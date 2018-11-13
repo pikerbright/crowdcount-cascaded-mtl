@@ -17,6 +17,7 @@ data_path =  './data/original/shanghaitech/part_B_final/test_data/images/'
 gt_path = './data/original/shanghaitech/part_B_final/test_data/ground_truth_csv/'
 model_path = './saved_models/cmtl_shtechB_10.h5'
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 output_dir = './output/'
 model_name = os.path.basename(model_path).split('.')[0]
@@ -34,7 +35,7 @@ net = CrowdCounter()
       
 trained_model = os.path.join(model_path)
 network.load_net(trained_model, net)
-net.cuda()
+net = net.to(device)
 net.eval()
 mae = 0.0
 mse = 0.0

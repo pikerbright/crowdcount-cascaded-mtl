@@ -60,14 +60,14 @@ def load_net(fname, net):
         v.copy_(param)
 
 
-
-def np_to_variable(x, is_cuda=True, is_training=False, dtype=torch.FloatTensor):
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def np_to_variable(x, is_training=False, dtype=torch.FloatTensor):
     if is_training:
         v = Variable(torch.from_numpy(x).type(dtype))
     else:
         v = Variable(torch.from_numpy(x).type(dtype), requires_grad = False, volatile = True)
-    if is_cuda:
-        v = v.cuda()
+
+    v = v.to(device)
     return v
 
 

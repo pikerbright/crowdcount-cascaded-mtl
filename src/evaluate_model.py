@@ -1,11 +1,14 @@
 from crowd_count import CrowdCounter
 import network
 import numpy as np
+import torch
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def evaluate_model(trained_model, data_loader):    
     net = CrowdCounter()
     network.load_net(trained_model, net)
-    net.cuda()
+    net = net.to(device)
     net.eval()
     mae = 0.0
     mse = 0.0
