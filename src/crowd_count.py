@@ -26,6 +26,7 @@ class CrowdCounter(nn.Module):
 
     def init_weight(self):
         network.weights_normal_init(self.CCN.base, dev=0.01)
+        network.weights_normal_init(self.CCN.conv_concat1_2x, dev=0.01)
         network.weights_normal_init(self.CCN.p_conv, dev=0.01)
 
     def get_optim_policies(self):
