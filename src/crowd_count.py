@@ -28,6 +28,7 @@ class CrowdCounter(nn.Module):
         network.weights_normal_init(self.CCN.base, dev=0.01)
         network.weights_normal_init(self.CCN.conv_concat1_2x, dev=0.01)
         network.weights_normal_init(self.CCN.p_conv, dev=0.01)
+        network.weights_normal_init(self.CCN.estdmap, dev=0.01)
 
     def get_optim_policies(self):
         base_weight = []
@@ -35,6 +36,8 @@ class CrowdCounter(nn.Module):
         head_weight = []
         head_bias = []
         deconv_weight = []
+        estdmap_weight = []
+        estdmap_bias = []
 
         for m in self.CCN.base.modules():
             if isinstance(m, torch.nn.Conv2d):
@@ -62,12 +65,20 @@ class CrowdCounter(nn.Module):
             ps = list(m.parameters())
             deconv_weight.append(ps[0])
 
+        for m in self.CCN.estdmap.modules():
+            if isinstance(m, torch.nn.Conv2d):
+                ps = list(m.parameters())
+                estdmap_weight.append(ps[0])
+                estdmap_bias.append(ps[1])
+
         return [
             {'params': base_weight, 'lr_mult': 1, 'decay_mult': 1, 'name': "base_weight"},
             {'params': base_bias, 'lr_mult': 2, 'decay_mult': 0, 'name': "base_bias"},
             {'params': head_weight, 'lr_mult': 1, 'decay_mult': 0, 'name': "head_weight"},
             {'params': head_bias, 'lr_mult': 2, 'decay_mult': 0, 'name': "head_bias"},
-            {'params': deconv_weight, 'lr_mult': 0, 'decay_mult': 0, 'name': "deconv_weight"}
+            {'params': deconv_weight, 'lr_mult': 0, 'decay_mult': 0, 'name': "deconv_weight"},
+            {'params': estdmap_weight, 'lr_mult': 10, 'decay_mult': 1, 'name': "estdmap_weight"},
+            {'params': estdmap_bias, 'lr_mult': 20, 'decay_mult': 0, 'name': "estdmap_bias"},
         ]
 
     @property

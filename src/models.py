@@ -78,8 +78,8 @@ class CMTL_VGG(nn.Module):
         self.conv_concat1_2x = nn.ConvTranspose2d(1024, 512, 2, stride=2, groups=512, padding=0, output_padding=0, bias=False)
 
         self.p_conv = nn.Sequential(Conv2d(1024, 512, 3, same_padding=True, NL='relu', bn=bn),
-                                    Conv2d(512, 256, 3, same_padding=True, NL='relu', bn=bn),
-                                    Conv2d(256, 1, 1, same_padding=True, NL=None, bn=bn))
+                                    Conv2d(512, 256, 3, same_padding=True, NL='relu', bn=bn))
+        self.estdmap = Conv2d(256, 1, 1, same_padding=True, NL=None, bn=bn)
 
 
     def forward(self, im_data):
@@ -106,7 +106,9 @@ class CMTL_VGG(nn.Module):
 
         concat = torch.cat((conv4_3, conv_concat1_2x), dim=1)
 
-        x_den = self.p_conv(concat)
+        p_conv = self.p_conv(concat)
+
+        x_den = self.estdmap(p_conv)
 
         return x_den
 
