@@ -77,8 +77,8 @@ class CrowdCounter(nn.Module):
             {'params': head_weight, 'lr_mult': 1, 'decay_mult': 0, 'name': "head_weight"},
             {'params': head_bias, 'lr_mult': 2, 'decay_mult': 0, 'name': "head_bias"},
             {'params': deconv_weight, 'lr_mult': 0, 'decay_mult': 0, 'name': "deconv_weight"},
-            {'params': estdmap_weight, 'lr_mult': 10, 'decay_mult': 1, 'name': "estdmap_weight"},
-            {'params': estdmap_bias, 'lr_mult': 20, 'decay_mult': 0, 'name': "estdmap_bias"},
+            {'params': estdmap_weight, 'lr_mult': 2, 'decay_mult': 1, 'name': "estdmap_weight"},
+            {'params': estdmap_bias, 'lr_mult': 4, 'decay_mult': 0, 'name': "estdmap_bias"},
         ]
 
     @property

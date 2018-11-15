@@ -55,7 +55,15 @@ class CMTL_VGG(nn.Module):
         self.num_classes = num_classes
 
         self.base = nn.Sequential(*vgg(vgg_cfg, 3))
-        
+
+        base_model_dict = self.base.state_dict()
+        pretrained_model = getattr(torchvision.models, 'vgg16')(True)
+        pretrained_dict = pretrained_model.state_dict()
+        model_dict = {k[9:]: v for k, v in pretrained_dict.items() if k[9:] in base_model_dict}
+        base_model_dict.update(model_dict)
+
+        self.base.load_state_dict(base_model_dict)
+
         # base_model_dict = self.base.state_dict()
         # pretrained_model = getattr(torchvision.models, 'vgg16')(True)
         # pretrained_dict = pretrained_model.state_dict()
@@ -79,7 +87,7 @@ class CMTL_VGG(nn.Module):
 
         self.p_conv = nn.Sequential(Conv2d(1024, 512, 3, same_padding=True, NL='relu', bn=bn),
                                     Conv2d(512, 256, 3, same_padding=True, NL='relu', bn=bn))
-        self.estdmap = Conv2d(256, 1, 1, same_padding=True, NL=None, bn=bn)
+        self.estdmap = Conv2d(256, 1, 1, same_padding=True, NL='relu', bn=bn)
 
 
     def forward(self, im_data):

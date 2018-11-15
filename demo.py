@@ -9,7 +9,7 @@ from src.crowd_count import CrowdCounter
 from src import network
 import cv2
 
-model_path = './final_models/cmtl_shtechB_39200.h5'
+model_path = './final_models/cmtl_shtechB_228.h5'
 
 def read_gray_img(img_path):
     bgr = cv2.imread(img_path)
@@ -43,6 +43,8 @@ def demo(img_path):
     heat_map = torch.squeeze(heat_map)
     heat_map = heat_map.data.numpy()
     print(np.sum(heat_map))
+    heat_map = cv2.resize(heat_map, (input_img.shape[3], input_img.shape[2]))
+    heat_map = heat_map / 64
     plt.imshow(heat_map, cmap='hot')
     plt.savefig('test.jpg')
     plt.show()
@@ -50,6 +52,7 @@ def demo(img_path):
 
 if __name__ == '__main__':
     # demo('demo/demo4.jpg')
-    demo('data/formatted_trainval/shanghaitech_part_B_patches_9/train/1_1.jpg')
+    # demo('data/formatted_trainval/shanghaitech_part_B_patches_9/train/1_1.jpg')
     # demo('/Users/zhuliang/work/huangpu/00006.jpg')
+    demo('data/original/shanghaitech/part_B_final/test_data/images/IMG_61.jpg')
 

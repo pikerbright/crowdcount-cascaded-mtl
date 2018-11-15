@@ -33,13 +33,15 @@ def log_print(text, color=None, on_color=None, attrs=None):
 parser = argparse.ArgumentParser()
 parser.add_argument('--lr', '--learning-rate', default=1e-5, type=float,
                     metavar='LR', help='initial learning rate')
-parser.add_argument('--momentum', default=0, type=float, metavar='M',
+parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
-parser.add_argument('--weight-decay', '--wd', default=0, type=float,
+parser.add_argument('--weight-decay', '--wd', default=5e-7, type=float,
                     metavar='W', help='weight decay (default: 5e-4)')
+parser.add_argument('--opt', '--optimizer', default="Adam",
+                    metavar='optimizer', help='optimizer type')
 
 args = parser.parse_args()
-print "LR: ", args.lr
+print "LR: ", args.lr, "weight decay", args.weight_decay, "momentum", args.momentum, "optimizer", args.opt
 method = 'cmtl' #method name - used for saving model file
 dataset_name = 'shtechB' #dataset name - used for saving model file
 output_dir = './saved_models/' #model files are saved here
@@ -86,7 +88,7 @@ if resume:
     print("Resume ", resume_model)
 else:
     # network.weights_normal_init(net, dev=0.01)
-    net.init_weight();
+    net.init_weight()
 
 net = net.to(device)
 net.train()
@@ -99,7 +101,10 @@ for group in policies:
 # optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 # optimizer = torch.optim.SGD(policies, args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 # optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=args.lr)
-optimizer = torch.optim.Adam(policies, lr=args.lr)
+if args.opt == "Adam":
+    optimizer = torch.optim.Adam(policies, lr=args.lr, weight_decay=args.weight_decay)
+else:
+    optimizer = torch.optim.SGD(policies, args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
 def adjust_learning_rate(optimizer, epoch, lr_steps):
     decay = 0.1 ** (sum(epoch >= np.array(lr_steps)))
@@ -147,16 +152,23 @@ for epoch in range(start_step, end_step+1):
         im_data = blob['data']
         gt_data = blob['gt_density']
         gt_class_label = blob['gt_class_label']       
-        '''        
+
         #data augmentation on the fly
         if np.random.uniform() > 0.5:
-            #randomly flip input image and density 
+            #randomly flip input image and density
             im_data = np.flip(im_data,3).copy()
             gt_data = np.flip(gt_data,3).copy()
         if np.random.uniform() > 0.5:
             #add random noise to the input image
-            im_data = im_data + np.random.uniform(-10,10,size=im_data.shape) 
-        '''         
+            im_data = im_data + np.random.uniform(-0.1,0.1,size=im_data.shape)
+
+        l2_reg = None
+        for name, W in net.named_parameters():
+            if l2_reg is None:
+                l2_reg = W.norm(2)
+            else:
+                l2_reg = l2_reg + W.norm(2)
+
         density_map = net(im_data, gt_data)
         loss = net.loss
         train_loss += loss.item()
@@ -164,7 +176,7 @@ for epoch in range(start_step, end_step+1):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
+
         if True:#step % disp_interval == 0:            
             duration = t.toc(average=False)
             fps = step_cnt / duration
@@ -172,7 +184,7 @@ for epoch in range(start_step, end_step+1):
             density_map = density_map.data.cpu().numpy()
             et_count = np.sum(density_map)
             utils.save_results(im_data,gt_data,density_map, output_dir)
-            log_text = 'epoch: %4d, step %4d, Time: %.4fs, gt_cnt: %4.1f, et_cnt: %4.1f' % (epoch,
+            log_text = 'epoch: %4d, step %4d, Time: %.4fs, gt_cnt: %4.5f, et_cnt: %4.5f' % (epoch,
                 step, 1./fps, gt_count,et_count)
             log_print(log_text, color='green', attrs=['bold'])
             re_cnt = True    
@@ -184,7 +196,6 @@ for epoch in range(start_step, end_step+1):
 
         iteration += 1
 
-    print(train_loss)
     if (epoch % 1400 == 0):
         save_name = os.path.join(output_dir, '{}_{}_{}.h5'.format(method,dataset_name,epoch))
         network.save_net(save_name, net) 
@@ -202,6 +213,6 @@ for epoch in range(start_step, end_step+1):
             exp.add_scalar_value('MAE', mae, step=epoch)
             exp.add_scalar_value('MSE', mse, step=epoch)
             exp.add_scalar_value('train_loss', train_loss/data_loader.get_num_samples(), step=epoch)
-        
-    
+
+    print(train_loss)
 
