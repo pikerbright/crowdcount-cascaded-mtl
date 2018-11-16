@@ -31,7 +31,7 @@ def log_print(text, color=None, on_color=None, attrs=None):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--lr', '--learning-rate', default=1e-5, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-6, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
@@ -47,10 +47,10 @@ dataset_name = 'shtechB' #dataset name - used for saving model file
 output_dir = './saved_models/' #model files are saved here
 
 #train and validation paths
-train_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train1'
+train_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train'
 train_gt_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train_den'
-val_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train1'
-val_gt_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/train_den'
+val_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/val'
+val_gt_path = './data/formatted_trainval/shanghaitech_part_B_patches_9/val_den'
 
 #training configuration
 start_step = 0
@@ -162,13 +162,6 @@ for epoch in range(start_step, end_step+1):
             #add random noise to the input image
             im_data = im_data + np.random.uniform(-0.1,0.1,size=im_data.shape)
 
-        l2_reg = None
-        for name, W in net.named_parameters():
-            if l2_reg is None:
-                l2_reg = W.norm(2)
-            else:
-                l2_reg = l2_reg + W.norm(2)
-
         density_map = net(im_data, gt_data)
         loss = net.loss
         train_loss += loss.item()
@@ -176,8 +169,8 @@ for epoch in range(start_step, end_step+1):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
-        if True:#step % disp_interval == 0:            
+        #print(loss)
+        if step % disp_interval == 0:            
             duration = t.toc(average=False)
             fps = step_cnt / duration
             gt_count = np.sum(gt_data)    
@@ -196,7 +189,7 @@ for epoch in range(start_step, end_step+1):
 
         iteration += 1
 
-    if (epoch % 1400 == 0):
+    if (epoch % 2 == 0):
         save_name = os.path.join(output_dir, '{}_{}_{}.h5'.format(method,dataset_name,epoch))
         network.save_net(save_name, net) 
         #calculate error on the validation dataset 
@@ -214,5 +207,13 @@ for epoch in range(start_step, end_step+1):
             exp.add_scalar_value('MSE', mse, step=epoch)
             exp.add_scalar_value('train_loss', train_loss/data_loader.get_num_samples(), step=epoch)
 
+    l2_reg = None
+    for name, W in net.named_parameters():
+        if l2_reg is None:
+            l2_reg = W.norm(2)
+        else:
+            l2_reg = l2_reg + W.norm(2)
+
+    print(l2_reg)
     print(train_loss)
 

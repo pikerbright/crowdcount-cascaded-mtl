@@ -15,7 +15,7 @@ save_output = True
 #test data and model file path
 data_path =  './data/original/shanghaitech/part_B_final/test_data/images/'
 gt_path = './data/original/shanghaitech/part_B_final/test_data/ground_truth_csv/'
-model_path = './saved_models/cmtl_shtechB_10.h5'
+model_path = './saved_models/cmtl_shtechB_50.h5'
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -44,6 +44,7 @@ for blob in data_loader:
     gt_data = blob['gt_density']
     density_map = net(im_data, gt_data)
     density_map = density_map.data.cpu().numpy()
+    np.clip(density_map, 0, 100, out=density_map)
     gt_count = np.sum(gt_data)
     et_count = np.sum(density_map)
     mae += abs(gt_count-et_count)
