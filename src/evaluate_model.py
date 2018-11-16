@@ -17,6 +17,7 @@ def evaluate_model(trained_model, data_loader):
         gt_data = blob['gt_density']
         density_map = net(im_data, gt_data)
         density_map = density_map.data.cpu().numpy()
+        np.clip(density_map, 0, 100, out=density_map)
         gt_count = np.sum(gt_data)
         et_count = np.sum(density_map)
         print "gt_count", gt_count,"et_count", et_count
