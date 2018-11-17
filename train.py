@@ -74,9 +74,9 @@ if rand_seed is not None:
         torch.cuda.manual_seed(rand_seed)
     
 #loadt training and validation data
-data_loader = ImageDataLoader(train_path, train_gt_path, shuffle=True, gt_downsample=True, pre_load=True)
+data_loader = ImageDataLoader(train_path, train_gt_path, shuffle=True, gt_downsample=True, pre_load=False)
 class_wts = data_loader.get_classifier_weights()
-data_loader_val = ImageDataLoader(val_path, val_gt_path, shuffle=False, gt_downsample=True, pre_load=True)
+data_loader_val = ImageDataLoader(val_path, val_gt_path, shuffle=False, gt_downsample=True, pre_load=False)
 
 resume = False
 #load net and initialize it
@@ -151,7 +151,7 @@ for epoch in range(start_step, end_step+1):
         step = step + 1        
         im_data = blob['data']
         gt_data = blob['gt_density']
-        gt_class_label = blob['gt_class_label']       
+        # gt_class_label = blob['gt_class_label']
 
         #data augmentation on the fly
         if np.random.uniform() > 0.5:

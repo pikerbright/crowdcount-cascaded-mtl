@@ -32,8 +32,8 @@ class ImageDataLoader():
             self.assign_gt_class_labels() #assign ground truth crowd group/class labels to each image
             
         else:
-            self.get_stats_in_dataset() #get min - max crowd count present in the dataset. used later for assigning crowd group/class
-            
+            # self.get_stats_in_dataset() #get min - max crowd count present in the dataset. used later for assigning crowd group/class
+            pass
     
     def get_classifier_weights(self):
         #since the dataset is imbalanced, classifier weights are used to ensure balance.
@@ -94,18 +94,18 @@ class ImageDataLoader():
                                     
                 fname = files[idx]
                 img, den, gt_count = self.read_image_and_gt(fname)
-                gt_class_label = np.zeros(self.num_classes,dtype=np.int)
-                bin_val = (self.max_gt_count - self.min_gt_count)/float(self.num_classes)
-                class_idx = np.round(gt_count/bin_val)
-                class_idx = int(min(class_idx,self.num_classes-1) )             
-                gt_class_label[class_idx] = 1
+                # gt_class_label = np.zeros(self.num_classes,dtype=np.int)
+                # bin_val = (self.max_gt_count - self.min_gt_count)/float(self.num_classes)
+                # class_idx = np.round(gt_count/bin_val)
+                # class_idx = int(min(class_idx,self.num_classes-1) )
+                # gt_class_label[class_idx] = 1
                 
                 blob = {}
                 blob['data']=img
                 blob['gt_density']=den
                 blob['fname'] = fname
                 blob['gt_count'] = gt_count
-                blob['gt_class_label'] = gt_class_label.reshape(1,gt_class_label.shape[0])
+                # blob['gt_class_label'] = gt_class_label.reshape(1,gt_class_label.shape[0])
                 
                 
                 
