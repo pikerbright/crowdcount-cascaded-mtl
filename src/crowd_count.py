@@ -23,6 +23,7 @@ class CrowdCounter(nn.Module):
         self.CCN = CMTL_VGG()
         self.loss_mse_fn = nn.MSELoss()
         self.rc_loss_fn = RCLoss()
+        self.negpos_ratio = 2
 
     def init_weight(self):
         network.weights_normal_init(self.CCN.base, dev=0.01)
@@ -100,16 +101,21 @@ class CrowdCounter(nn.Module):
         loss_mse = nn.MSELoss(reduce=False)(density_map, gt_data)
         temp = nn.MSELoss()(density_map, gt_data)
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        select_num = torch.LongTensor([[density_map.numel() / 2]]).to(device)
+        pos = gt_data > 0
+
+        loss_mse = loss_mse.reshape(-1, 1)
+        loss_mse[pos.view(-1, 1)] = 0
         loss_mse = loss_mse.view(1, -1)
         _, loss_idx = loss_mse.sort(1, descending=True)
         _, idx_rank = loss_idx.sort(1)
-        select_index = idx_rank < select_num.expand_as(idx_rank)
+        num_pos = pos.long().sum().view(1, -1)
+        num_neg = torch.clamp(self.negpos_ratio * num_pos + 1, max=pos.size(2)*pos.size(3) - 1)
+        neg = idx_rank < num_neg.expand_as(idx_rank)
 
-        select_index = select_index.view(1, 1, density_map.size(2), density_map.size(3))
-        select_density_map = density_map[select_index.gt(0)]
-        select_gt_data = gt_data[select_index.gt(0)]
+        pos_idx = pos.view(1, 1, density_map.size(2), density_map.size(3))
+        neg_idx = neg.view(1, 1, density_map.size(2), density_map.size(3))
+        select_density_map = density_map[(pos_idx+neg_idx).gt(0)]
+        select_gt_data = gt_data[(pos_idx+neg_idx).gt(0)]
 
         select_loss_mse = nn.MSELoss()(select_density_map, select_gt_data)
 
