@@ -85,9 +85,13 @@ class CMTL_VGG(nn.Module):
 
         self.conv_concat1_2x = nn.ConvTranspose2d(1024, 512, 2, stride=2, groups=512, padding=0, output_padding=0, bias=False)
 
+        self.p_conv2 = nn.Sequential(Conv2d(512, 256, 3, same_padding=True, NL='relu', bn=bn),
+                                    Conv2d(256, 128, 3, same_padding=True, NL='relu', bn=bn))
+        self.estdmap_raw = Conv2d(128, 1, 1, same_padding=True, NL=None, bn=bn)
+
         self.p_conv = nn.Sequential(Conv2d(1024, 512, 3, same_padding=True, NL='relu', bn=bn),
                                     Conv2d(512, 256, 3, same_padding=True, NL='relu', bn=bn))
-        self.estdmap = Conv2d(256, 1, 1, same_padding=True, NL=None, bn=bn)
+        self.estdmap_diff = Conv2d(256, 1, 1, same_padding=True, NL=None, bn=bn)
 
 
     def forward(self, im_data):
@@ -112,15 +116,18 @@ class CMTL_VGG(nn.Module):
 
         conv_concat1_2x = self.conv_concat1_2x(concat1)
 
+        p_conv2 = self.p_conv2(conv_concat1_2x)
+        x_den_raw = self.estdmap_raw(p_conv2)
+
         concat = torch.cat((conv4_3, conv_concat1_2x), dim=1)
 
         p_conv = self.p_conv(concat)
 
-        x_den = self.estdmap(p_conv)
+        x_den_diff = self.estdmap_diff(p_conv)
 
 #	x_den = torch.mul(x_den, 10)
 
-        return x_den
+        return x_den_diff, x_den_raw
 
 class CMTL(nn.Module):
     '''

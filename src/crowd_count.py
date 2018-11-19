@@ -28,7 +28,8 @@ class CrowdCounter(nn.Module):
         network.weights_normal_init(self.CCN.base, dev=0.01)
         network.weights_normal_init(self.CCN.conv_concat1_2x, dev=0.01)
         network.weights_normal_init(self.CCN.p_conv, dev=0.01)
-        network.weights_normal_init(self.CCN.estdmap, dev=0.01)
+        network.weights_normal_init(self.CCN.estdmap_raw, dev=0.01)
+        network.weights_normal_init(self.CCN.estdmap_diff, dev=0.01)
 
     def get_optim_policies(self):
         base_weight = []
@@ -65,7 +66,13 @@ class CrowdCounter(nn.Module):
             ps = list(m.parameters())
             deconv_weight.append(ps[0])
 
-        for m in self.CCN.estdmap.modules():
+        for m in self.CCN.estdmap_diff.modules():
+            if isinstance(m, torch.nn.Conv2d):
+                ps = list(m.parameters())
+                estdmap_weight.append(ps[0])
+                estdmap_bias.append(ps[1])
+
+        for m in self.CCN.estdmap_raw.modules():
             if isinstance(m, torch.nn.Conv2d):
                 ps = list(m.parameters())
                 estdmap_weight.append(ps[0])
@@ -87,17 +94,24 @@ class CrowdCounter(nn.Module):
     
     def forward(self,  im_data, gt_data=None, gt_cls_label=None, ce_weights=None):        
         im_data = network.np_to_variable(im_data, is_training=self.training)
-        density_map = self.CCN(im_data)
+        density_map_diff, density_map_raw = self.CCN(im_data)
 
         if self.training:                        
             gt_data = network.np_to_variable(gt_data, is_training=self.training)
-            self.loss_mse = self.build_loss(density_map, gt_data)
+            self.loss_mse = self.build_loss_cas(density_map_diff, density_map_raw, gt_data)
             
             
-        return density_map
-    
+        return density_map_raw + density_map_diff
+
+    def build_loss_cas(self, density_map_diff, density_map_raw, gt_data):
+        loss_raw = self.build_loss(density_map_raw, gt_data)
+        loss_diff = self.build_loss(density_map_diff, gt_data - density_map_raw.data)
+
+        return loss_raw + loss_diff
+
     def build_loss(self, density_map, gt_data):
-        loss_mse = nn.MSELoss(reduce=False)(density_map, gt_data)
+        f = nn.MSELoss(reduce=False)
+        loss_mse = f(density_map, gt_data)
         temp = nn.MSELoss()(density_map, gt_data)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
