@@ -124,7 +124,8 @@ class CrowdCounter(nn.Module):
         _, loss_idx = loss_mse.sort(1, descending=True)
         _, idx_rank = loss_idx.sort(1)
         num_pos = pos.long().sum().view(1, -1)
-        num_neg = torch.clamp(self.negpos_ratio * num_pos + 1, max=pos.size(2)*pos.size(3) - 1)
+        num_neg = torch.clamp(self.negpos_ratio * num_pos, min=density_map.size(2) * density_map.size(3) / 2,
+                              max=pos.size(2) * pos.size(3) - 1)
         neg = idx_rank < num_neg.expand_as(idx_rank)
 
         pos_idx = pos.view(1, 1, density_map.size(2), density_map.size(3))
