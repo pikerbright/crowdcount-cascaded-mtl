@@ -97,7 +97,20 @@ class CrowdCounter(nn.Module):
         return density_map
     
     def build_loss(self, density_map, gt_data):
-        loss_mse = self.loss_mse_fn(density_map, gt_data)        
+        loss_mse = nn.MSELoss(reduce=False)(density_map, gt_data)
+        temp = nn.MSELoss()(density_map, gt_data)
 
-        return loss_mse
+        select_num = torch.LongTensor([[density_map.numel() / 2]])
+        loss_mse = loss_mse.view(1, -1)
+        _, loss_idx = loss_mse.sort(1, descending=True)
+        _, idx_rank = loss_idx.sort(1)
+        select_index = idx_rank < select_num.expand_as(idx_rank)
+
+        select_index = select_index.view(1, 1, density_map.size(2), density_map.size(3))
+        select_density_map = density_map[select_index.gt(0)]
+        select_gt_data = gt_data[select_index.gt(0)]
+
+        select_loss_mse = nn.MSELoss()(select_density_map, select_gt_data)
+
+        return select_loss_mse
 
