@@ -100,7 +100,8 @@ class CrowdCounter(nn.Module):
         loss_mse = nn.MSELoss(reduce=False)(density_map, gt_data)
         temp = nn.MSELoss()(density_map, gt_data)
 
-        select_num = torch.LongTensor([[density_map.numel() / 2]])
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        select_num = torch.LongTensor([[density_map.numel() / 2]]).to(device)
         loss_mse = loss_mse.view(1, -1)
         _, loss_idx = loss_mse.sort(1, descending=True)
         _, idx_rank = loss_idx.sort(1)
