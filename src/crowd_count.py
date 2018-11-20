@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import network
-from models import CMTL, CMTL_VGG
+from models import CMTL, CMTL_VGG, CSRNet
 
 class RCLoss(nn.Module):
 
@@ -20,10 +20,10 @@ class RCLoss(nn.Module):
 class CrowdCounter(nn.Module):
     def __init__(self, ce_weights=None):
         super(CrowdCounter, self).__init__()        
-        self.CCN = CMTL_VGG()
+        self.CCN = CSRNet()
         self.loss_mse_fn = nn.MSELoss()
         self.rc_loss_fn = RCLoss()
-
+    '''
     def init_weight(self):
         network.weights_normal_init(self.CCN.base, dev=0.01)
         network.weights_normal_init(self.CCN.conv_concat1_2x, dev=0.01)
@@ -80,7 +80,7 @@ class CrowdCounter(nn.Module):
             {'params': estdmap_weight, 'lr_mult': 2, 'decay_mult': 1, 'name': "estdmap_weight"},
             {'params': estdmap_bias, 'lr_mult': 4, 'decay_mult': 0, 'name': "estdmap_bias"},
         ]
-
+    '''
     @property
     def loss(self):
         return self.loss_mse

@@ -148,8 +148,8 @@ class ImageDataLoader():
         wd_1 = (wd/4)*4
         img = cv2.resize(img,(wd_1,ht_1))
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-        #img = img / 255.
-        #img = (img - [0.5, 0.5, 0.5]) / [0.229, 0.229, 0.229]
+        img = img / 255.
+        img = (img - [0.45, 0.45, 0.45]) / [0.225, 0.225, 0.225]
         img = np.transpose(img, [2, 0, 1])
         img = img.reshape((1,3,img.shape[1],img.shape[2]))
 

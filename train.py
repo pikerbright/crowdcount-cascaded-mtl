@@ -88,23 +88,24 @@ if resume:
     print("Resume ", resume_model)
 else:
     # network.weights_normal_init(net, dev=0.01)
-    net.init_weight()
+    # net.init_weight()
+    pass
 
 net = net.to(device)
 net.train()
 
-policies = net.get_optim_policies()
-for group in policies:
-    print(('group: {} has {} params, lr_mult: {}, decay_mult: {}'.format(
-        group['name'], len(group['params']), group['lr_mult'], group['decay_mult'])))
+# policies = net.get_optim_policies()
+# for group in policies:
+#     print(('group: {} has {} params, lr_mult: {}, decay_mult: {}'.format(
+#         group['name'], len(group['params']), group['lr_mult'], group['decay_mult'])))
 
 # optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 # optimizer = torch.optim.SGD(policies, args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 # optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=args.lr)
 if args.opt == "Adam":
-    optimizer = torch.optim.Adam(policies, lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = torch.optim.Adam(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 else:
-    optimizer = torch.optim.SGD(policies, args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(net.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
 def adjust_learning_rate(optimizer, epoch, lr_steps):
     decay = 0.1 ** (sum(epoch >= np.array(lr_steps)))
@@ -140,7 +141,7 @@ t.tic()
 best_mae = sys.maxint
 
 iteration = 0
-adjust_learning_rate(optimizer, 0, (1, 2))
+# adjust_learning_rate(optimizer, 0, (1, 2))
 for epoch in range(start_step, end_step+1):    
     step = -1
     train_loss = 0
@@ -154,13 +155,13 @@ for epoch in range(start_step, end_step+1):
         # gt_class_label = blob['gt_class_label']
 
         #data augmentation on the fly
-        if np.random.uniform() > 0.5:
-            #randomly flip input image and density
-            im_data = np.flip(im_data,3).copy()
-            gt_data = np.flip(gt_data,3).copy()
-        if np.random.uniform() > 0.5:
-            #add random noise to the input image
-            im_data = im_data + np.random.uniform(-0.1,0.1,size=im_data.shape)
+        # if np.random.uniform() > 0.5:
+        #     #randomly flip input image and density
+        #     im_data = np.flip(im_data,3).copy()
+        #     gt_data = np.flip(gt_data,3).copy()
+        # if np.random.uniform() > 0.5:
+        #     #add random noise to the input image
+        #     im_data = im_data + np.random.uniform(-0.1,0.1,size=im_data.shape)
 
         density_map = net(im_data, gt_data)
         loss = net.loss
