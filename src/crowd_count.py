@@ -29,6 +29,7 @@ class CrowdCounter(nn.Module):
         network.weights_normal_init(self.CCN.base, dev=0.01)
         network.weights_normal_init(self.CCN.conv_concat1_2x, dev=0.01)
         network.weights_normal_init(self.CCN.p_conv, dev=0.01)
+        network.weights_normal_init(self.CCN.p_conv2, dev=0.01)
         network.weights_normal_init(self.CCN.estdmap_raw, dev=0.01)
         network.weights_normal_init(self.CCN.estdmap_diff, dev=0.01)
 
@@ -47,7 +48,7 @@ class CrowdCounter(nn.Module):
                 base_weight.append(ps[0])
                 base_bias.append(ps[1])
 
-        head_modules = list(self.CCN.p_conv.modules())
+        head_modules = list(self.CCN.p_conv.modules()) + list(self.CCN.p_conv2.modules())
 
         for m in head_modules:
             if isinstance(m, torch.nn.Conv2d) or isinstance(m, torch.nn.ConvTranspose2d):
